@@ -1,11 +1,10 @@
 import * as THREE from 'three'
 import React, { useRef } from 'react'
-import { useGLTF, MeshTransmissionMaterial } from '@react-three/drei'
+import { useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 
 export function Model(props: any) {
   const group = useRef<THREE.Group>()
-  // Исправил путь на тот, что в прелоаде был
   const { nodes, materials } = useGLTF('/roomsite-v1-v1.glb') as any
   
   const logRef4 = useRef<THREE.Mesh>(null!)
@@ -31,41 +30,36 @@ export function Model(props: any) {
     }
   })
 
-  const glassConfig = {
-    transmission: 1,
-    roughness: 0.1, // Чуть больше матовости скроет упрощения
-    thickness: 0.1,
-    ior: 1.2,
-    chromaticAberration: 0.03,
-    
-    backside: false,      
-    samples: 2,           
-    resolution: 128,      
-    
-    side: THREE.FrontSide, 
-    toneMapped: false,
-    attenuationDistance: 10,
+  // Оптимизированный конфиг материала
+  const fastGlassProps = {
+    transparent: true,
+    opacity: 0.5,           // Прозрачность
+    metalness: 0.9,         // Сильные отражения (блеск)
+    roughness: 0.05,        // Гладкая поверхность
+    side: THREE.DoubleSide, // Видим обе стороны
+    toneMapped: false,      // Сочные, яркие цвета
+    depthWrite: false,      // Убирает баги наложения прозрачных слоев друг на друга
   }
 
   return (
     <group ref={group} {...props} dispose={null}>
       <group name="Scene">
-        {/* Статика комнаты */}
         <group position={[0, 1.06, 0]}>
           <mesh geometry={nodes.Mesh_1_1.geometry} material={materials.Material_1} />
           <mesh geometry={nodes.Mesh_1_2.geometry} material={materials.Material_0} />
           <mesh geometry={nodes.Mesh_1_3.geometry} material={materials.Material} />
         </group>
 
-        {/* LOGO 4 - СЕРЕБРО/БЕЛЫЙ */}
+        {/* LOGO 4 - СЕРЕБРО */}
         <mesh
           ref={logRef4}
           geometry={nodes.logo_01004.geometry}
           position={[-0.68, 0.28, -1.5]}
           rotation={[1.58, -0.02, -0.01]}
           scale={[0.17, 0.03, 0.17]}
+          /* УБРАЛИ castShadow/receiveShadow для скорости */
         >
-          <MeshTransmissionMaterial {...glassConfig} color="#ffffff" emissive="#ffffff" emissiveIntensity={0.2} />
+          <meshPhysicalMaterial {...fastGlassProps} color="#ffffff" emissive="#ffffff" emissiveIntensity={0.2} />
         </mesh>
 
         {/* LOGO 3 - РОЗОВЫЙ */}
@@ -76,10 +70,10 @@ export function Model(props: any) {
           rotation={[1.58, -0.34, 0]}
           scale={[0.17, 0.03, 0.17]}
         >
-          <MeshTransmissionMaterial {...glassConfig} color="#926775" emissive="#926775" emissiveIntensity={0.5} />
+          <meshPhysicalMaterial {...fastGlassProps} color="#926775" emissive="#926775" emissiveIntensity={0.5} />
         </mesh>
 
-        {/* LOGO 2 - ЗЕЛЕНЫЙ (ТВОЙ) */}
+        {/* LOGO 2 - ЗЕЛЕНЫЙ */}
         <mesh
           ref={logRef2}
           geometry={nodes.logo_01002.geometry}
@@ -88,13 +82,7 @@ export function Model(props: any) {
           scale={[0.17, 0.03, 0.17]}
           onClick={() => window.open('https://t.me/g0s2piid', '_blank')}
         >
-          <MeshTransmissionMaterial 
-            {...glassConfig} 
-            color="#3E625A" 
-            emissive="#3E625A" 
-            emissiveIntensity={0.5} 
-            attenuationColor="#3E625A"
-          />
+          <meshPhysicalMaterial {...fastGlassProps} color="#3E625A" emissive="#3E625A" emissiveIntensity={0.6} />
         </mesh>
       </group>
     </group>
